@@ -2,15 +2,9 @@
  * @file video.js
  * @module videojs
  */
-import {version} from '../../package.json';
+import { version } from '../../package.json';
 import window from 'global/window';
-import {
-  hooks_,
-  hooks,
-  hook,
-  hookOnce,
-  removeHook
-} from './utils/hooks';
+import { hooks_, hooks, hook, hookOnce, removeHook } from './utils/hooks';
 import * as setup from './setup';
 import * as stylesheet from './utils/stylesheet.js';
 import Component from './component';
@@ -30,7 +24,7 @@ import log, { createLogger } from './utils/log.js';
 import * as Dom from './utils/dom.js';
 import * as browser from './utils/browser.js';
 import * as Url from './utils/url.js';
-import {isObject} from './utils/obj';
+import { isObject } from './utils/obj';
 import computedStyle from './utils/computed-style.js';
 import extend from './extend.js';
 import xhr from '@videojs/xhr';
@@ -50,7 +44,7 @@ import defineLazyProperty from './utils/define-lazy-property.js';
  * @return {string}
  *          The string, without any leading `#`.
  */
-const normalizeId = (id) => id.indexOf('#') === 0 ? id.slice(1) : id;
+const normalizeId = (id) => (id.indexOf('#') === 0 ? id.slice(1) : id);
 
 /**
  * The `videojs()` function doubles as the main function for users to create a
@@ -132,62 +126,64 @@ const normalizeId = (id) => id.indexOf('#') === 0 ? id.slice(1) : id;
  *         The `videojs()` function returns a {@link Player|Player} instance.
  */
 function videojs(id, options, ready) {
-  let player = videojs.getPlayer(id);
+    let player = videojs.getPlayer(id);
 
-  if (player) {
-    if (options) {
-      log.warn(`Player "${id}" is already initialised. Options will not be applied.`);
+    if (player) {
+        if (options) {
+            log.warn(`Player "${id}" is already initialised. Options will not be applied.`);
+        }
+        if (ready) {
+            player.ready(ready);
+        }
+        return player;
     }
-    if (ready) {
-      player.ready(ready);
+
+    const el = typeof id === 'string' ? Dom.$('#' + normalizeId(id)) : id;
+
+    if (!Dom.isEl(el)) {
+        throw new TypeError('The element or ID supplied is not valid. (videojs)');
     }
+
+    // document.body.contains(el) will only check if el is contained within that one document.
+    // This causes problems for elements in iframes.
+    // Instead, use the element's ownerDocument instead of the global document.
+    // This will make sure that the element is indeed in the dom of that document.
+    // Additionally, check that the document in question has a default view.
+    // If the document is no longer attached to the dom, the defaultView of the document will be null.
+    if (!el.ownerDocument.defaultView || !el.ownerDocument.body.contains(el)) {
+        log.warn('The element supplied is not included in the DOM');
+    }
+
+    options = options || {};
+
+    // Store a copy of the el before modification, if it is to be restored in destroy()
+    // If div ingest, store the parent div
+    if (options.restoreEl === true) {
+        options.restoreEl = (
+            el.parentNode && el.parentNode.hasAttribute('data-vjs-player') ? el.parentNode : el
+        ).cloneNode(true);
+    }
+
+    hooks('beforesetup').forEach((hookFunction) => {
+        const opts = hookFunction(el, mergeOptions(options));
+
+        if (!isObject(opts) || Array.isArray(opts)) {
+            log.error('please return an object in beforesetup hooks');
+            return;
+        }
+
+        options = mergeOptions(options, opts);
+    });
+
+    // We get the current "Player" component here in case an integration has
+    // replaced it with a custom player.
+    const PlayerComponent = Component.getComponent('Player');
+
+    player = new PlayerComponent(el, options, ready);
+
+    hooks('setup').forEach((hookFunction) => hookFunction(player));
+
     return player;
-  }
-
-  const el = (typeof id === 'string') ? Dom.$('#' + normalizeId(id)) : id;
-
-  if (!Dom.isEl(el)) {
-    throw new TypeError('The element or ID supplied is not valid. (videojs)');
-  }
-
-  // document.body.contains(el) will only check if el is contained within that one document.
-  // This causes problems for elements in iframes.
-  // Instead, use the element's ownerDocument instead of the global document.
-  // This will make sure that the element is indeed in the dom of that document.
-  // Additionally, check that the document in question has a default view.
-  // If the document is no longer attached to the dom, the defaultView of the document will be null.
-  if (!el.ownerDocument.defaultView || !el.ownerDocument.body.contains(el)) {
-    log.warn('The element supplied is not included in the DOM');
-  }
-
-  options = options || {};
-
-  // Store a copy of the el before modification, if it is to be restored in destroy()
-  // If div ingest, store the parent div
-  if (options.restoreEl === true) {
-    options.restoreEl = (el.parentNode && el.parentNode.hasAttribute('data-vjs-player') ? el.parentNode : el).cloneNode(true);
-  }
-
-  hooks('beforesetup').forEach((hookFunction) => {
-    const opts = hookFunction(el, mergeOptions(options));
-
-    if (!isObject(opts) || Array.isArray(opts)) {
-      log.error('please return an object in beforesetup hooks');
-      return;
-    }
-
-    options = mergeOptions(options, opts);
-  });
-
-  // We get the current "Player" component here in case an integration has
-  // replaced it with a custom player.
-  const PlayerComponent = Component.getComponent('Player');
-
-  player = new PlayerComponent(el, options, ready);
-
-  hooks('setup').forEach((hookFunction) => hookFunction(player));
-
-  return player;
 }
 
 videojs.hooks_ = hooks_;
@@ -198,16 +194,18 @@ videojs.removeHook = removeHook;
 
 // Add default styles
 if (window.VIDEOJS_NO_DYNAMIC_STYLE !== true && Dom.isReal()) {
-  let style = Dom.$('.vjs-styles-defaults');
+    let style = Dom.$('.vjs-styles-defaults');
 
-  if (!style) {
-    style = stylesheet.createStyleElement('vjs-styles-defaults');
-    const head = Dom.$('head');
+    if (!style) {
+        style = stylesheet.createStyleElement('vjs-styles-defaults');
+        const head = Dom.$('head');
 
-    if (head) {
-      head.insertBefore(style, head.firstChild);
-    }
-    stylesheet.setTextContent(style, `
+        if (head) {
+            head.insertBefore(style, head.firstChild);
+        }
+        stylesheet.setTextContent(
+            style,
+            `
       .video-js {
         width: 300px;
         height: 150px;
@@ -216,8 +214,9 @@ if (window.VIDEOJS_NO_DYNAMIC_STYLE !== true && Dom.isReal()) {
       .vjs-fluid:not(.vjs-audio-only-mode) {
         padding-top: 56.25%
       }
-    `);
-  }
+    `
+        );
+    }
 }
 
 // Run Auto-load players
@@ -263,31 +262,31 @@ videojs.getPlayers = () => Player.players;
  *          matching the argument.
  */
 videojs.getPlayer = (id) => {
-  const players = Player.players;
-  let tag;
+    const players = Player.players;
+    let tag;
 
-  if (typeof id === 'string') {
-    const nId = normalizeId(id);
-    const player = players[nId];
+    if (typeof id === 'string') {
+        const nId = normalizeId(id);
+        const player = players[nId];
 
-    if (player) {
-      return player;
+        if (player) {
+            return player;
+        }
+
+        tag = Dom.$('#' + nId);
+    } else {
+        tag = id;
     }
 
-    tag = Dom.$('#' + nId);
-  } else {
-    tag = id;
-  }
+    if (Dom.isEl(tag)) {
+        const { player, playerId } = tag;
 
-  if (Dom.isEl(tag)) {
-    const {player, playerId} = tag;
-
-    // Element may have a `player` property referring to an already created
-    // player instance. If so, return that.
-    if (player || players[playerId]) {
-      return player || players[playerId];
+        // Element may have a `player` property referring to an already created
+        // player instance. If so, return that.
+        if (player || players[playerId]) {
+            return player || players[playerId];
+        }
     }
-  }
 };
 
 /**
@@ -300,10 +299,11 @@ videojs.getPlayer = (id) => {
  *
  */
 videojs.getAllPlayers = () =>
-
-  // Disposed players leave a key with a `null` value, so we need to make sure
-  // we filter those out.
-  Object.keys(Player.players).map(k => Player.players[k]).filter(Boolean);
+    // Disposed players leave a key with a `null` value, so we need to make sure
+    // we filter those out.
+    Object.keys(Player.players)
+        .map((k) => Player.players[k])
+        .filter(Boolean);
 
 videojs.players = Player.players;
 videojs.getComponent = Component.getComponent;
@@ -326,11 +326,13 @@ videojs.getComponent = Component.getComponent;
  *         The newly registered component
  */
 videojs.registerComponent = (name, comp) => {
-  if (Tech.isTech(comp)) {
-    log.warn(`The ${name} tech was registered as a component. It should instead be registered using videojs.registerTech(name, tech)`);
-  }
+    if (Tech.isTech(comp)) {
+        log.warn(
+            `The ${name} tech was registered as a component. It should instead be registered using videojs.registerTech(name, tech)`
+        );
+    }
 
-  Component.registerComponent.call(Component, name, comp);
+    Component.registerComponent.call(Component, name, comp);
 };
 
 videojs.getTech = Tech.getTech;
@@ -345,15 +347,15 @@ videojs.use = middlewareUse;
  * @property {object} middleware.TERMINATOR
  */
 Object.defineProperty(videojs, 'middleware', {
-  value: {},
-  writeable: false,
-  enumerable: true
+    value: {},
+    writeable: false,
+    enumerable: true,
 });
 
 Object.defineProperty(videojs.middleware, 'TERMINATOR', {
-  value: TERMINATOR,
-  writeable: false,
-  enumerable: true
+    value: TERMINATOR,
+    writeable: false,
+    enumerable: true,
 });
 
 /**
@@ -391,8 +393,8 @@ videojs.deregisterPlugin = Plugin.deregisterPlugin;
  *         The plugin sub-class or function
  */
 videojs.plugin = (name, plugin) => {
-  log.warn('videojs.plugin() is deprecated; use videojs.registerPlugin() instead');
-  return Plugin.registerPlugin(name, plugin);
+    log.warn('videojs.plugin() is deprecated; use videojs.registerPlugin() instead');
+    return Plugin.registerPlugin(name, plugin);
 };
 
 videojs.getPlugins = Plugin.getPlugins;
@@ -412,15 +414,12 @@ videojs.getPluginVersion = Plugin.getPluginVersion;
  * @return {Object}
  *         The resulting language dictionary object
  */
-videojs.addLanguage = function(code, data) {
-  code = ('' + code).toLowerCase();
+videojs.addLanguage = function (code, data) {
+    code = ('' + code).toLowerCase();
 
-  videojs.options.languages = mergeOptions(
-    videojs.options.languages,
-    {[code]: data}
-  );
+    videojs.options.languages = mergeOptions(videojs.options.languages, { [code]: data });
 
-  return videojs.options.languages[code];
+    return videojs.options.languages[code];
 };
 
 /**
@@ -463,23 +462,23 @@ videojs.AudioTrack = AudioTrack;
 videojs.VideoTrack = VideoTrack;
 
 [
-  'isEl',
-  'isTextNode',
-  'createEl',
-  'hasClass',
-  'addClass',
-  'removeClass',
-  'toggleClass',
-  'setAttributes',
-  'getAttributes',
-  'emptyEl',
-  'appendContent',
-  'insertContent'
-].forEach(k => {
-  videojs[k] = function() {
-    log.warn(`videojs.${k}() is deprecated; use videojs.dom.${k}() instead`);
-    return Dom[k].apply(null, arguments);
-  };
+    'isEl',
+    'isTextNode',
+    'createEl',
+    'hasClass',
+    'addClass',
+    'removeClass',
+    'toggleClass',
+    'setAttributes',
+    'getAttributes',
+    'emptyEl',
+    'appendContent',
+    'insertContent',
+].forEach((k) => {
+    videojs[k] = function () {
+        log.warn(`videojs.${k}() is deprecated; use videojs.dom.${k}() instead`);
+        return Dom[k].apply(null, arguments);
+    };
 });
 
 videojs.computedStyle = computedStyle;
@@ -504,7 +503,6 @@ videojs.defineLazyProperty = defineLazyProperty;
 
 // Adding less ambiguous text for fullscreen button.
 // In a major update this could become the default text and key.
-videojs.addLanguage('en', {'Non-Fullscreen': 'Exit Fullscreen'});
+videojs.addLanguage('en', { 'Non-Fullscreen': 'Exit Fullscreen' });
 
-export default videojs;
-
+export { videojs };
