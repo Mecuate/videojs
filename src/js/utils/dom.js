@@ -2,14 +2,14 @@
  * @file dom.js
  * @module dom
  */
-import document from 'global/document';
+// import document from 'global/document';
 import window from 'global/window';
 import fs from '../fullscreen-api';
 import log from './log.js';
 import {isObject} from './obj';
 import computedStyle from './computed-style';
 import * as browser from './browser';
-
+const document = window.document;
 /**
  * Detect if a value is a string with any non-whitespace characters.
  *
@@ -71,7 +71,8 @@ function classRegExp(className) {
  */
 export function isReal() {
   // Both document and window will never be undefined thanks to `global`.
-  return document === window.document;
+  // return document === window.document;
+  return true;
 }
 
 /**

@@ -1,39 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite App</title>
-  </head>
-  <body>
-    <div id="app"></div>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vite App</title>
+    </head>
+    <body>
+        <div id="app">
+            <video-js
+                id="vid1"
+                controls
+                preload="auto"
+                width="510"
+                height="230"
+                poster="https://vjs.zencdn.net/v/oceans.png"
+            >
+                <source src="https://vjs.zencdn.net/v/oceans.mp4" type="video/mp4" />
+                <source src="https://vjs.zencdn.net/v/oceans.webm" type="video/webm" />
+                <source src="https://vjs.zencdn.net/v/oceans.ogv" type="video/ogg" />
+                <track
+                    kind="captions"
+                    src="../docs/examples/shared/example-captions.vtt"
+                    srclang="en"
+                    label="English"
+                />
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a web browser that
+                    <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
+            </video-js>
+        </div>
 
-    <h2 class="hoho">Navigation</h2>
-    <ul>
-      <li><a href="test/debug.html">Run unit tests in browser.</a></li>
-      <li><a href="docs/api/">view api docs</a></li>
-      <li><a href="sandbox/index.html">Simple Demo (also seen below)</a></li>
-      <li><a href="sandbox/plugin.html">Plugin Demo</a></li>
-      <li><a href="sandbox/responsive.html">Responsive Demo</a></li>
-      <li><a href="sandbox/middleware-play.html">Middleware Play Demo</a></li>
-      <li><a href="sandbox/icons.html">Icons Demo</a></li>
-      <li><a href="sandbox/focus-visible.html">Focus Visible Demo</a></li>
-      <li><a href="sandbox/embeds.html">Embeds Demo</a></li>
-      <li><a href="sandbox/descriptions.html">Descriptions Demo</a></li>
-      <li><a href="sandbox/combined-tracks.html">Combined Tracks Demo</a></li>
-      <li><a href="sandbox/live.html">Live Demo</a></li>
-      <li><a href="sandbox/liveui.html">LiveUI Demo</a></li>
-      <li><a href="sandbox/vertical-volume.html">Vertical Volume Demo</a></li>
-      <li><a href="sandbox/language.html">Laungage Demo</a></li>
-      <li><a href="sandbox/hls.html">Hls Demo</a></li>
-      <li><a href="sandbox/autoplay-tests.html">Autoplay Tests</a></li>
-      <li>
-        <a href="sandbox/noUITitleAttributes.html">noUITitleAttributes Demo</a>
-      </li>
-      <li><a href="sandbox/debug.html">Videojs debug build test page</a></li>
-    </ul>
+        <h2 class="hoho">Navigation</h2>
+        <ul>
+            <li><a href="test/debug.html">Run unit tests in browser.</a></li>
+            <li><a href="docs/api/">view api docs</a></li>
+            <li><a href="sandbox/index.html">Simple Demo (also seen below)</a></li>
+            <li><a href="sandbox/plugin.html">Plugin Demo</a></li>
+            <li><a href="sandbox/responsive.html">Responsive Demo</a></li>
+            <li><a href="sandbox/middleware-play.html">Middleware Play Demo</a></li>
+            <li><a href="sandbox/icons.html">Icons Demo</a></li>
+            <li><a href="sandbox/focus-visible.html">Focus Visible Demo</a></li>
+            <li><a href="sandbox/embeds.html">Embeds Demo</a></li>
+            <li><a href="sandbox/descriptions.html">Descriptions Demo</a></li>
+            <li><a href="sandbox/combined-tracks.html">Combined Tracks Demo</a></li>
+            <li><a href="sandbox/live.html">Live Demo</a></li>
+            <li><a href="sandbox/liveui.html">LiveUI Demo</a></li>
+            <li><a href="sandbox/vertical-volume.html">Vertical Volume Demo</a></li>
+            <li><a href="sandbox/language.html">Laungage Demo</a></li>
+            <li><a href="sandbox/hls.html">Hls Demo</a></li>
+            <li><a href="sandbox/autoplay-tests.html">Autoplay Tests</a></li>
+            <li>
+                <a href="sandbox/noUITitleAttributes.html">noUITitleAttributes Demo</a>
+            </li>
+            <li><a href="sandbox/debug.html">Videojs debug build test page</a></li>
+        </ul>
 
-    <script type="module" src="/main.js"></script>
-  </body>
+        <script type="module" src="/main.js"></script>
+        <script type="module" defer>
+            import { videojs } from '/main.js';
+            var vid = document.getElementById('vid1');
+            var player = videojs(vid);
+            player.log('window.player created', player);
+        </script>
+    </body>
 </html>
